@@ -21,13 +21,10 @@ public class CampusCash implements Cryptocurrency {
         }
 
         CampusCash that = (CampusCash) obj;
-        return (((long) Math.round(that.getAmount() * 100) - (long) Math.round(amount * 100)) == 0L); 
-        //compare only two decimals since it's amount of money
+        return Double.valueOf(amount).equals(that.getAmount()); 
     }
 
     @Override public int hashCode() {
-        return Long.valueOf((long) Math.round(amount * 100)).hashCode();
-        //keep two decimals. 
-        //ex. both 56.348... and 56.354... will be converted to 5635L and have the same hashCode
+        return Double.valueOf(amount).hashCode();
     }
 }

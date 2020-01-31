@@ -20,7 +20,7 @@ public class Wallet<T> {
 
     public boolean add(T value) {
         if (value == null) {
-            return false;
+            throw new IllegalArgumentException("invalid argument");
         }
 
         if (!contains(value)) {
@@ -67,12 +67,18 @@ public class Wallet<T> {
                 continue;
             }
             if (item.equals(value)) {
-                currentArray[indexOfValue] = null;
+                
                 if (currentSize > (int) Math.floor((1 - EFFICIENT_CAPACITY) * currentArray.length) || currentArray.length <= DEFAULT_INITIAL_SIZE ) {
-                    currentArray = rearrange(currentArray, indexOfValue);
+                    System.arraycopy(currentArray, (indexOfValue + 1), currentArray, indexOfValue, (currentSize - (indexOfValue + 1)));
+                    
                 } else {
-                    currentArray = halfWalletCapacity(currentArray);
+                    //currentArray = halfWalletCapacity(currentArray, indexOfValue);
+                    T[] halfArray = arrayCreator.create(currentArray.length / 2);
+                    System.arraycopy(currentArray, 0, halfArray, 0, indexOfValue);
+                    System.arraycopy(currentArray, (indexOfValue + 1), halfArray, indexOfValue, (currentSize - (indexOfValue + 1)));
+                    currentArray = halfArray;
                 }
+                currentArray[currentSize - 1] = null;
                 atomicWallet.set(currentArray);
                 return true;
             }
@@ -104,61 +110,19 @@ public class Wallet<T> {
 
         T[] doubleLengthArray;
         
-        if (oldLength < (int) Math.round(EFFICIENT_CAPACITY * DEFAULT_INITIAL_SIZE)) {
+        if (oldLength * 2 < DEFAULT_INITIAL_SIZE) {
             doubleLengthArray = arrayCreator.create(DEFAULT_INITIAL_SIZE);
         } else {
             doubleLengthArray = arrayCreator.create(2 * oldLength);
         }
 
-        int newIndex = 0;
-        for (int i = 0; i < oldLength; i++) {
-            if (oldArray[i] != null) {
-                doubleLengthArray[newIndex] = oldArray[i];
-                newIndex++;
-            }
-        }
+        System.arraycopy(oldArray, 0, doubleLengthArray, 0, oldLength);
         atomicWallet.set(doubleLengthArray);
     }
 
-    private T[] halfWalletCapacity(T[] array) {
-        int oldLength = array.length;
-        int newLength = oldLength / 2;
-        T[] halfArray = arrayCreator.create(newLength);
-
-        int indexOld = 0;
-        int indexNew = 0;
-        while (indexNew < newLength && indexOld < oldLength) {
-            if (array[indexOld] == null) {
-                indexOld++;
-            }
-            else {
-                halfArray[indexNew] = array[indexOld];
-                indexOld++;
-                indexNew++;
-            }
-        }
-        return halfArray;
-    }
-
-    private T[] rearrange(T[] array, int index) {
-        int currLength = array.length;
-        int indexNext = index + 1;
-
-        while (index < currLength && indexNext < currLength) {                  
-            if (array[index] == null) {
-                if (array[indexNext] != null) {
-                    array[index] = array[indexNext];
-                    array[indexNext] = null;
-                    index++;
-                    indexNext++; 
-                } else {
-                    indexNext++;
-                }
-            } else {
-                index++;
-            }
-        }
-        return array;
+    public int length() {
+        T[] array = atomicWallet.get();
+        return array.length;
     }
 }
 
